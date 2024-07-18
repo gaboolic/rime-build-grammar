@@ -39,8 +39,20 @@ class ExampleDataset(Dataset):
 sentences = ["这是一个测试句子。", "各个国家有各个国家的国歌", "各个国家有各个国家德国个","请务必在抽血时间截止前到达门店","请留意门店短信提示或查看订单详情"]
 scores = [1, 1, 0.2, 1,1]  # 用实际流畅度评分数据替换这些分数
 
+
+word_map = {}
+for i in range(0,1):
+    read_file = open(f"temp/zhihu_dealq{i}.txt", 'r', encoding='utf-8')
+    for line in read_file:
+        line = line.strip()
+        sentences.append(line)
+        scores.append(1)
+        if len(sentences) > 10000:
+            break;
+
 tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
 dataset = ExampleDataset(tokenizer, sentences, scores)
+print("dataset 初始化完成")
 
 # 自定义 collate_fn 以适配 DataCollatorWithPadding
 def custom_collate_fn(batch):
@@ -71,12 +83,15 @@ optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 # 设置设备
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+# 初始化模型
+model.load_state_dict(torch.load('temp/fluency_scorer_model.pth'))
 model.to(device)
 
 # 训练模型
 epochs = 3
 model.train()
 for epoch in range(epochs):
+    print(f"训练 epoch:{epoch}")
     for batch in dataloader:
         inputs = batch['inputs']
         labels = batch['labels'].to(device)
@@ -109,4 +124,4 @@ with torch.no_grad():
         print(f"\"{test_sentence}\" Fluency Score: {score.item()}")
 
 # 保存模型状态字典
-torch.save(model.state_dict(), 'bert/fluency_scorer_model.pth')
+torch.save(model.state_dict(), 'temp/fluency_scorer_model.pth')

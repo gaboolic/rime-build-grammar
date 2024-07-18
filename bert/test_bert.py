@@ -19,38 +19,7 @@ def set_seed(seed):
 
 set_seed(42)
 
-# 示例数据集定义
-class ExampleDataset(Dataset):
-    def __init__(self, tokenizer, sentences, scores):
-        self.tokenizer = tokenizer
-        self.sentences = sentences
-        self.scores = scores
 
-    def __len__(self):
-        return len(self.sentences)
-
-    def __getitem__(self, idx):
-        inputs = self.tokenizer(self.sentences[idx], return_tensors='pt', padding='max_length', truncation=True, max_length=512)
-        inputs = {key: val.squeeze(0) for key, val in inputs.items()}
-        labels = torch.tensor(self.scores[idx], dtype=torch.float)
-        return {'inputs': inputs, 'labels': labels}
-
-# 假设你有以下数据集
-sentences = ["这是一个测试句子。", "各个国家有各个国家的国歌", "各个国家有各个国家德国个","请务必在抽血时间截止前到达门店","请留意门店短信提示或查看订单详情"]
-scores = [1, 1, 0.2, 1,1]  # 用实际流畅度评分数据替换这些分数
-
-tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
-dataset = ExampleDataset(tokenizer, sentences, scores)
-
-# 自定义 collate_fn 以适配 DataCollatorWithPadding
-def custom_collate_fn(batch):
-    batch_inputs = [item['inputs'] for item in batch]
-    batch_labels = torch.stack([item['labels'] for item in batch])
-    inputs = data_collator(batch_inputs)
-    return {'inputs': inputs, 'labels': batch_labels}
-
-data_collator = DataCollatorWithPadding(tokenizer)
-dataloader = DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=custom_collate_fn)
 
 # 定义模型
 class FluencyScorer(nn.Module):
@@ -71,24 +40,10 @@ optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 # 设置设备
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+# 初始化模型
+model.load_state_dict(torch.load('temp/fluency_scorer_model.pth'))
 model.to(device)
 
-# 训练模型
-epochs = 3
-model.train()
-for epoch in range(epochs):
-    for batch in dataloader:
-        inputs = batch['inputs']
-        labels = batch['labels'].to(device)
-        inputs = {key: val.to(device) for key, val in inputs.items()}
-        
-        optimizer.zero_grad()
-        outputs = model(**inputs).squeeze(-1)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-        
-    print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}")
 
 
 test_sentences = ["这是一个测试句子", "各个国家有各个国家的国歌", "各个国家有各个国家德国个","禁止早恋","进制造连","可以加辅助码","可以贾府竹马","可以家父猪吗",
@@ -99,6 +54,7 @@ test_sentences = ["这是一个测试句子", "各个国家有各个国家的国
 
 # 进行测试
 model.eval()
+tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
 with torch.no_grad():
     for test_sentence in test_sentences:
         #test_sentence = "这是一个测试句子。"
@@ -106,3 +62,4 @@ with torch.no_grad():
         inputs = {key: val.to(device) for key, val in inputs.items()}
         score = model(inputs['input_ids'], inputs.get('attention_mask'))
         print(f"\"{test_sentence}\" Fluency Score: {score.item()}")
+
