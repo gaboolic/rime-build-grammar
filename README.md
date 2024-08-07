@@ -1,6 +1,8 @@
 
 执行cat merge_2_3.txt| ./build_grammar
 
+但是这里注意build_grammar是macos下编译的，其他系统需要在各自系统下编译。编译方式参考https://github.com/gaboolic/librime/blob/master/.github/workflows/release-ci.yml
+
 即可生成.gram文件
 
 后续详细写说明
