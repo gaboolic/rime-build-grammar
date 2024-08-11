@@ -54,8 +54,8 @@ def write_frequencies_to_file(ngrams_generator, ngrams_counts, filename_pattern)
         file.close()
 
 # Update the path to your ARPA file
-arpa_file_path = 'zhs-fivegrams-f50.arpa'
-arpa_file_path = 'lm_sc.arpa'
+
+arpa_file_path = '~/vscode_proj/kenlm/build/MyModel/log-0811-001.arpa'
 
 # Extract n-grams counts
 ngrams_counts = extract_ngram_counts(arpa_file_path)

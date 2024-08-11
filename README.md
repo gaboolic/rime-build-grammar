@@ -20,9 +20,9 @@
 
 4 把arpa转成librime-octagram的tool用的格式 雨辰提供
 
-<https://github.com/gaboolic/rime-build-grammar/blob/main/arpa.py>
+先执行`arpa.py`
 
-获得merge_2_3.txt
+再执行`merge_ngram.py`合并arpa文件中的ngrams结果，获得merge_2_3.txt
 
 5 执行librime-octagram的build_grammar
 
