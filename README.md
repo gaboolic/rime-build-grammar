@@ -16,6 +16,8 @@
 使用[kenlm](https://github.com/kpu/kenlm) 这个开源的语言模型库，编译后，进入build目录，把分词后的文本也放入build目录执行
 `bin/lmplz -o 4 --verbose_header --text ./zhihu_deal_fenci_merge.txt --arpa MyModel/log.arpa  --prune 0 50 100`
 
+`--prune 0 50 100`是剪枝，电脑配置好就不需要
+
 即可生成.arpa文件
 
 4 把arpa转成librime-octagram的tool用的格式 雨辰提供
