@@ -1,45 +1,70 @@
-import os
-import string
+import argparse
+from pathlib import Path
 
-def is_all_chinese(text):
-    for char in text:
-        if not '\u4e00' <= char <= '\u9fff':
-            return False
-    return True
 
-word_map = {}
-# file_list = ['ngram_1_frequencies.txt','ngram_2_frequencies.txt','ngram_3_frequencies.txt']
-file_list = ['ngram_3_frequencies.txt','ngram_4_frequencies.txt','ngram_5_frequencies.txt']
+def normalize_ngram_text(text):
+    text = text.replace(" ", "")
+    text = text.replace("<s>", "")
+    return text.replace("</s>", "$")
 
-for file in file_list:
-    file_name = os.path.join('', file)
-    with open(file_name, 'r') as file:
-        # 逐行读取文件内容
-        for line in file:
-            # 去除行尾的换行符
-            line = line.rstrip()
-            if line.startswith('#') or '\t' not in line:
-                continue
-            params = line.split("\t")
 
-            word = params[0]
-            word = word.replace(" ", "")
-            word = word.replace("<s>", "")
+def merge_ngram_files(input_dir, orders):
+    word_map = {}
+    for order in orders:
+        file_name = input_dir / f"ngram_{order}_frequencies.txt"
+        with open(file_name, "r", encoding="utf-8") as file:
+            for raw_line in file:
+                line = raw_line.rstrip()
+                if line.startswith("#") or "\t" not in line:
+                    continue
 
-            # 句末符号
-            word = word.replace("</s>", "$") 
-        
-            
-            if len(params) == 3:
-                freq = params[2]
-            else:
-                freq = params[1]
-            
-            if len(word) <= 1 or len(word) > 8:
-                continue
-            word_map[word] = freq
+                params = line.split("\t")
+                word = normalize_ngram_text(params[0])
+                freq = params[2] if len(params) == 3 else params[1]
 
-write_file_name = os.path.join('', "merge_3_4_5.txt")
-write_file = open(write_file_name, 'w')
-for word in word_map:
-    write_file.write(word+"\t"+word_map[word]+"\n")
+                if len(word) <= 1 or len(word) > 8:
+                    continue
+                word_map[word] = freq
+    return word_map
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Merge extracted n-gram files into build_grammar input.")
+    parser.add_argument(
+        "--input-dir",
+        default=".",
+        help="Directory containing ngram_*_frequencies.txt files. Defaults to current directory.",
+    )
+    parser.add_argument(
+        "--orders",
+        nargs="+",
+        type=int,
+        required=True,
+        help="N-gram orders to merge, for example: --orders 2 3",
+    )
+    parser.add_argument(
+        "--output",
+        help="Output file path. Defaults to merge_<orders>.txt in the input directory.",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    input_dir = Path(args.input_dir).expanduser().resolve()
+    output_path = (
+        Path(args.output).expanduser().resolve()
+        if args.output
+        else input_dir / f"merge_{'_'.join(str(order) for order in args.orders)}.txt"
+    )
+
+    word_map = merge_ngram_files(input_dir, args.orders)
+    with open(output_path, "w", encoding="utf-8") as write_file:
+        for word, freq in word_map.items():
+            write_file.write(f"{word}\t{freq}\n")
+
+    print(f"Wrote {len(word_map)} entries to {output_path}")
+
+
+if __name__ == "__main__":
+    main()

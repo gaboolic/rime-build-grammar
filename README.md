@@ -22,12 +22,43 @@
 
 4 把arpa转成librime-octagram的tool用的格式 雨辰提供
 
-先执行`arpa.py`
+先执行`python arpa.py log.arpa --output-dir output`
 
-再执行`merge_ngram.py`合并arpa文件中的ngrams结果，获得merge_2_3.txt
+再执行`python merge_ngram.py --input-dir output --orders 2 3`合并arpa文件中的ngrams结果，获得`merge_2_3.txt`
 
 5 执行librime-octagram的build_grammar
 
 `cat merge_2_3.txt| ./build_grammar`
 
 但是这里注意build_grammar是macos下编译的，其他系统需要在各自系统下编译。编译方式参考<https://github.com/gaboolic/librime/blob/master/.github/workflows/release-ci.yml>
+
+项目里额外放了两个可执行文件：
+
+- `build_grammar.windows.exe`：Windows 版本
+- `build_grammar.linux`：WSL / Linux 版本
+
+Windows 下可以这样生成 `.gram`：
+
+`Get-Content .\merge_2_3.txt | .\build_grammar.windows.exe zh-moqi`
+
+这样会在当前目录生成`zh-moqi.gram`。
+
+WSL 下可以这样生成 `.gram`：
+
+`cat merge_2_3.txt | ./build_grammar.linux zh-moqi`
+
+这样也会在当前目录生成`zh-moqi.gram`。
+
+如果是从 `.arpa` 开始，完整示例可以写成：
+
+`python arpa.py .\lm_sc.arpa --output-dir .\lm_sc_output`
+
+`python merge_ngram.py --input-dir .\lm_sc_output --orders 2 3`
+
+然后在 Windows 下执行：
+
+`Get-Content .\lm_sc_output\merge_2_3.txt | .\build_grammar.windows.exe lm_sc`
+
+或者在 WSL 下执行：
+
+`cd /mnt/d/vscode/moqi-input-method-projs/rime-build-grammar/lm_sc_output && cat merge_2_3.txt | ../build_grammar.linux lm_sc`
